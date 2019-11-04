@@ -33,8 +33,8 @@ Add InjTyp Inj_comparison_Z.
 Definition ZcompareZ (x y : Z) :=
   Z_of_comparison (Z.compare x y).
 
-Program Instance BinOp_Zcompare : BinOp Z.compare :=
-  { TBOp := ZcompareZ }.
+Instance BinOp_Zcompare : BinOp Z.compare :=
+  { TBOp := ZcompareZ ; TBOpInj := ltac:(reflexivity) }.
 Add BinOp BinOp_Zcompare.
 
 Instance Op_eq_comparison : BinRel (@eq comparison) :=

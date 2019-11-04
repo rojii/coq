@@ -105,17 +105,21 @@ end
 
 module EBinOpT = struct
   type t =
-    { (* Op : source1 -> source2 -> source3 *)
-      source1: EConstr.t
-    ; source2: EConstr.t
-    ; source3: EConstr.t
-    ; target: EConstr.t
-    ; inj1: EConstr.t
-    ; (* InjTyp source1 target *)
-      inj2: EConstr.t
-    ; (* InjTyp source2 target *)
-      inj3: EConstr.t
-    ; (* InjTyp source3 target *)
+    {
+      isid  : bool;
+      (* Op = TBOp *)
+      source1: EConstr.t;
+      source2: EConstr.t;
+      source3: EConstr.t;
+      target1: EConstr.t;
+      target2: EConstr.t;
+      target3: EConstr.t;
+      inj1: EConstr.t;
+      (* InjTyp source1 target1 *)
+      inj2: EConstr.t;
+      (* InjTyp source2 target2 *)
+      inj3: EConstr.t;
+      (* InjTyp source3 target3 *)
       tbop: EConstr.t
     (* TBOpInj *) }
 end
@@ -128,7 +132,8 @@ module EUnOpT = struct
   type t =
     { source1: EConstr.t
     ; source2: EConstr.t
-    ; target: EConstr.t
+    ; target1: EConstr.t
+    ; target2: EConstr.t
     ; inj1_t: EConstr.t
     ; inj2_t: EConstr.t
     ; unop: EConstr.t }
@@ -252,16 +257,21 @@ module EBinOp = struct
   let table = table
 
   let mk_elt evd i a =
-    { source1= a.(0)
+    let isid = EConstr.eq_constr evd a.(6) a.(10) in
+    {
+      isid
+    ; source1= a.(0)
     ; source2= a.(1)
     ; source3= a.(2)
-    ; target= a.(3)
-    ; inj1= a.(5)
-    ; inj2= a.(6)
-    ; inj3= a.(7)
-    ; tbop= a.(9) }
+    ; target1= a.(3)
+    ; target2= a.(4)
+    ; target3= a.(5)
+    ; inj1= a.(7)
+    ; inj2= a.(8)
+    ; inj3= a.(9)
+    ; tbop= a.(11) }
 
-  let get_key = 4
+  let get_key = 6
 
 
   let cast x = BinOp x
@@ -311,12 +321,13 @@ module EUnOp = struct
   let mk_elt evd i a =
     { source1= a.(0)
     ; source2= a.(1)
-    ; target= a.(2)
-    ; inj1_t= a.(4)
-    ; inj2_t= a.(5)
-    ; unop= a.(6) }
+    ; target1= a.(2)
+    ; target2= a.(3)
+    ; inj1_t= a.(5)
+    ; inj2_t= a.(6)
+    ; unop= a.(7) }
 
-  let get_key = 3
+  let get_key = 4
 
 end
 
@@ -739,7 +750,9 @@ let mkapp2_id evd i (* InjTyp S3 T *)
            , [| dbop.source1
               ; dbop.source2
               ; dbop.source3
-              ; dbop.target
+              ; dbop.target1
+              ; dbop.target2
+              ; dbop.target3
               ; t
               ; dbop.inj1
               ; dbop.inj2
@@ -748,7 +761,7 @@ let mkapp2_id evd i (* InjTyp S3 T *)
               ; e1'
               ; e2' |] )))
   in
-  if not inj.isid then default ()
+  if not dbop.EBinOpT.isid then default ()
   else
     match (e1, e2) with
     | Constant (_, e1), Constant (_, e2)
@@ -757,6 +770,7 @@ let mkapp2_id evd i (* InjTyp S3 T *)
      |Var (_, e1), Constant (_, e2) ->
         Var (inj, EConstr.mkApp (t, [|e1; e2|]))
     | _, _ -> default ()
+
 
 let mkapp_id evd i inj (unop, u) f e1 =
   EUnOpT.(if EConstr.eq_constr evd u.unop f then
@@ -769,7 +783,8 @@ let mkapp_id evd i inj (unop, u) f e1 =
              ( force mkapp
              , [| u.source1
                 ; u.source2
-                ; u.target
+                ; u.target1
+                ; u.target2
                 ; f
                 ; u.inj1_t
                 ; u.inj2_t
@@ -780,12 +795,10 @@ let mkapp_id evd i inj (unop, u) f e1 =
     Injterm
       (EConstr.mkApp
          ( force mkapp
-         , [|u.source1; u.source2; u.target; f; u.inj1_t; u.inj2_t; unop; e1|]
+         , [|u.source1; u.source2; u.target1; u.target2;f; u.inj1_t; u.inj2_t; unop; e1|]
          )))
 
 type typed_constr = {constr: EConstr.t; typ: EConstr.t}
-
-
 
 let get_injection env evd t =
   match snd (HConstr.find t !table_cache) with
@@ -864,6 +877,7 @@ let get_injection env evd t =
   if EConstr.isConstruct evd e then Constant (inj, e) (* Evaluate later *)
   else
     let (c,a) = get_operator env evd e in
+    (*Feedback.msg_debug Pp.(str "\ntrans_expr "++pr_constr env evd c);*)
     try
       let (k,t) = find_option (match_operator env evd c a) (HConstr.find_all c !table_cache) in
       let n = Array.length a in
@@ -886,11 +900,14 @@ let get_injection env evd t =
     with Not_found -> Var (inj,e)
 
 let trans_expr env evd e =
-  try trans_expr env evd e with Not_found ->
-    raise
-      (CErrors.user_err
-         ( Pp.str "Missing injection for type "
-         ++ Printer.pr_leconstr_env env evd e.typ ))
+  try
+    trans_expr env evd e
+  with
+    Not_found ->
+     raise
+       (CErrors.user_err
+                  ( Pp.str "Missing injection for type "
+                    ++ Printer.pr_leconstr_env env evd e.typ ))
 
 
 type tprop =
@@ -923,7 +940,8 @@ let rec trans_prop env evd e =
        end
     | BinRel {decl = br ; deriv = rop} ->
        begin
-       try
+         (*Feedback.msg_debug Pp.(str "\ntrans_prop "++pr_constr env evd rop.EBinRelT.brel);*)
+         try
             let a1 = trans_expr env evd {constr = a.(n-2) ; typ = rop.EBinRelT.source} in
             let a2 = trans_expr env evd {constr = a.(n-1) ; typ = rop.EBinRelT.source} in
             if EConstr.eq_constr evd t rop.EBinRelT.brel then
@@ -1061,8 +1079,9 @@ let trans_concl t =
         let concl = Tacmach.New.pf_concl gl in
         let env = Tacmach.New.pf_env gl in
         let evd = Tacmach.New.project gl in
-        let t' = unfold None env evd (EConstr.mkApp (force ieq, [|t|])) in
-        if is_progress_rewrite evd concl (get_type_of env evd t') then
+        let t'  = unfold None env evd (EConstr.mkApp (force ieq, [|t|])) in
+        let tyt' = (get_type_of env evd t') in
+        if is_progress_rewrite evd concl tyt' then
           Equality.general_rewrite true Locus.AllOccurrences true false t'
         else tclIDTAC ))
 

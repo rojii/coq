@@ -34,19 +34,19 @@ Class InjTyp (S : Type) (T : Type) :=
 
 (** [BinOp Op] declares a source operator [Op: S1 -> S2 -> S3].
  *)
-Class BinOp {S1 S2 S3:Type} {T:Type} (Op : S1 -> S2 -> S3) {I1 : InjTyp S1 T} {I2 : InjTyp S2 T} {I3 : InjTyp S3 T} :=
+Class BinOp {S1 S2 S3 T1 T2 T3:Type} (Op : S1 -> S2 -> S3) {I1 : InjTyp S1 T1} {I2 : InjTyp S2 T2} {I3 : InjTyp S3 T3} :=
   mkbop {
       (* [TBOp] is the target operator after injection of operands. *)
-      TBOp : T -> T -> T;
+      TBOp : T1 -> T2 -> T3;
       (* [TBOpInj] states the correctness of the injection. *)
       TBOpInj : forall (n:S1) (m:S2), inj (Op n m) = TBOp (inj n) (inj m)
     }.
 
 (** [Unop Op] declares a source operator [Op : S1 -> S2]. *)
-Class UnOp {S1 S2 T:Type} (Op : S1 -> S2) {I1 : InjTyp S1 T} {I2 : InjTyp S2 T}  :=
+Class UnOp {S1 S2 T1 T2:Type} (Op : S1 -> S2) {I1 : InjTyp S1 T1} {I2 : InjTyp S2 T2}  :=
   mkuop {
       (* [TUOp] is the target operator after injection of operands. *)
-      TUOp : T -> T;
+      TUOp : T1 -> T2;
       (* [TUOpInj] states the correctness of the injection. *)
       TUOpInj : forall (x:S1), inj (Op x) = TUOp (inj x)
     }.
@@ -158,11 +158,11 @@ Definition mkuprop_op  (Op : Prop -> Prop) (POp : PropUOp Op)
   |}.
 
 
-Lemma mkapp2 (S1 S2 S3 T : Type) (Op : S1 -> S2 -> S3)
-      {I1 : InjTyp S1 T} {I2 : InjTyp S2 T} {I3 : InjTyp S3 T}
-         (B : @BinOp S1 S2 S3 T Op I1 I2 I3)
-         (t1 : @injterm S1 T inj) (t2 : @injterm S2 T inj)
-         : @injterm S3 T inj.
+Lemma mkapp2 (S1 S2 S3 T1 T2 T3 : Type) (Op : S1 -> S2 -> S3)
+      {I1 : InjTyp S1 T1} {I2 : InjTyp S2 T2} {I3 : InjTyp S3 T3}
+         (B : @BinOp S1 S2 S3 T1 T2 T3 Op I1 I2 I3)
+         (t1 : @injterm S1 T1 inj) (t2 : @injterm S2 T2 inj)
+         : @injterm S3 T3 inj.
 Proof.
   apply (mkinjterm _ _ inj (Op (source t1) (source t2)) (TBOp (target t1) (target t2))).
    (rewrite <- inj_ok;
@@ -170,12 +170,12 @@ Proof.
     apply TBOpInj).
 Defined.
 
-Lemma mkapp (S1 S2 T : Type) (Op : S1 -> S2)
-      {I1 : InjTyp S1 T}
-      {I2 : InjTyp S2 T}
-      (B : @UnOp S1 S2 T Op I1 I2 )
-      (t1 : @injterm S1 T inj)
-         : @injterm S2 T inj.
+Lemma mkapp (S1 S2 T1 T2 : Type) (Op : S1 -> S2)
+      {I1 : InjTyp S1 T1}
+      {I2 : InjTyp S2 T2}
+      (B : @UnOp S1 S2 T1 T2 Op I1 I2 )
+      (t1 : @injterm S1 T1 inj)
+         : @injterm S2 T2 inj.
 Proof.
   apply (mkinjterm _ _ inj (Op (source t1)) (TUOp (target t1))).
   (rewrite <- inj_ok; apply TUOpInj).

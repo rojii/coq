@@ -53,15 +53,18 @@ arithmetic expressions interpreted over a domain :math:`D \in \{\mathbb{Z},\math
 The syntax of the formulas is the following:
 
  .. productionlist:: F
-   F : A ∣ P ∣ True ∣ False ∣ F ∧ F ∣ F ∨ F ∣ F ↔ F ∣ F → F ∣ ¬ F
+   F : A ∣ True ∣ False ∣ F ∧ F ∣ F ∨ F ∣ F ↔ F ∣ F → F ∣ ¬ F
    A : p = p ∣ p > p ∣ p < p ∣ p ≥ p ∣ p ≤ p
    p : c ∣ x ∣ −p ∣ p − p ∣ p + p ∣ p × p ∣ p ^ n
 
-where :math:`c` is a numeric constant, :math:`x \in D` is a numeric variable, the
-operators :math:`−, +, ×` are respectively subtraction, addition, and product;
-:math:`p ^ n` is exponentiation by a constant :math:`n`, :math:`P` is an arbitrary proposition.
-For :math:`\mathbb{Q}`, equality is not Leibniz equality ``=`` but the equality of
-rationals ``==``.
+where :math:`c` is a numeric constant, :math:`x \in D` is a numeric
+variable, the operators :math:`−, +, ×` are respectively subtraction,
+addition, and product; :math:`p ^ n` is exponentiation by a constant
+:math:`n`, :math:`P` is an arbitrary proposition.  For
+:math:`\mathbb{Q}`, equality is not Leibniz equality ``=`` but the
+equality of rationals ``==``. For :math:`\mathbb{Z}`, the syntax is extended
+with boolean comparisons `Z.eqb`, `Z.gtb`, `Z.geb`, `Z.ltb`,
+`Z.leb` and boolean operators `&&`, `||`, `implb`, `negb` and `eqb`.
 
 For :math:`\mathbb{Z}` (resp. :math:`\mathbb{Q}`), :math:`c` ranges over integer constants (resp. rational
 constants). For :math:`\mathbb{R}`, the tactic recognizes as real constants the

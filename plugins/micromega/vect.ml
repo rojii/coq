@@ -18,6 +18,7 @@ open Mutils
  *)
 type var = int
 type t = (var * num) list
+type vector = t
 
 (** [equal v1 v2 = true] if the vectors are syntactically equal. *)
 
@@ -148,7 +149,7 @@ let rec add (ve1:t) (ve2:t)  =
   match ve1 , ve2 with
   | [] , v | v , [] -> v
   | (v1,c1)::l1 , (v2,c2)::l2 ->
-     let cmp = Util.pervasives_compare v1 v2 in
+     let cmp = Int.compare v1 v2 in
      if cmp == 0 then
        let s = add_num c1 c2 in
        if eq_num (Int 0) s
@@ -163,7 +164,7 @@ let rec xmul_add (n1:num) (ve1:t) (n2:num) (ve2:t) =
   | [] , _ -> mul n2 ve2
   | _ , [] -> mul n1 ve1
   | (v1,c1)::l1 , (v2,c2)::l2 ->
-     let cmp = Util.pervasives_compare v1 v2 in
+     let cmp = Int.compare v1 v2 in
      if cmp == 0 then
        let s = ( n1 */ c1) +/ (n2 */ c2) in
        if eq_num (Int 0) s
@@ -227,7 +228,6 @@ let rec fresh v =
   | [v,_] -> v + 1
   | _::v  -> fresh v
 
-
 let variables v =
   List.fold_left (fun acc (x,_) ->  ISet.add x acc) ISet.empty v
 
@@ -248,6 +248,16 @@ let decomp_fst v =
   | [] -> ((0,Int 0),[])
   | x::v -> (x,v)
 
+
+let rec subst (vr:int) (e:t) (v:t) =
+  match v with
+  | [] -> []
+  | (x,n)::v' ->
+     match Int.compare vr x with
+     | 0  -> mul_add n e (Int 1) v'
+     | -1 -> v
+     | 1  -> add  [x,n] (subst vr e v')
+     | _  -> assert false
 
 let fold f acc v =
   List.fold_left (fun acc (v,i) -> f acc v i) acc v
@@ -336,3 +346,18 @@ let abs_min_elt v =
 let partition p = List.partition (fun (vr,vl) -> p vr vl)
 
 let mkvar x = set x (Int 1) null
+
+module Bound =
+  struct
+    type t = { cst : num ; var : var ; coeff : num }
+
+    let of_vect (v:vector) =
+      match v with
+      | [x,v] ->
+         if x = 0
+         then None
+         else Some{cst = Int 0; var = x ; coeff = v}
+      | [0,v;x,v'] -> Some{cst = v; var =x ; coeff = v'}
+      | _ -> None
+
+  end

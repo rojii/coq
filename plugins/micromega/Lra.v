@@ -22,15 +22,12 @@ Require Import VarMap.
 Require Coq.micromega.Tauto.
 Declare ML Module "micromega_plugin".
 
-Ltac rchange := 
+Ltac rchecker :=
   intros __wit __varmap __ff ;
-  change (Tauto.eval_bf (Reval_formula (@find R 0%R __varmap)) __ff) ;
-  apply (RTautoChecker_sound __ff __wit).
+  exact (RTautoChecker_sound __ff __wit
+                             (@eq_refl bool true <: @eq bool (RTautoChecker __ff __wit) true)
+                             (@find R 0%R __varmap)).
 
-Ltac rchecker_no_abstract := rchange ; vm_compute ; reflexivity.
-Ltac rchecker_abstract   := rchange ; vm_cast_no_check (eq_refl true).
-
-Ltac rchecker := rchecker_no_abstract.
 
 (** Here, lra stands for linear real arithmetic *)
 Ltac lra := unfold Rdiv in * ;   lra_R  rchecker.

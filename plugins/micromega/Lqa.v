@@ -22,16 +22,11 @@ Require Import DeclConstant.
 Require Coq.micromega.Tauto.
 Declare ML Module "micromega_plugin".
 
-Ltac rchange := 
+Ltac rchecker :=
   intros __wit __varmap __ff ;
-  change (Tauto.eval_bf (Qeval_formula (@find Q 0%Q __varmap)) __ff) ;
-  apply (QTautoChecker_sound __ff __wit).
-
-Ltac rchecker_no_abstract := rchange ; vm_compute ; reflexivity.
-Ltac rchecker_abstract   := rchange ; vm_cast_no_check (eq_refl true).
-
-Ltac rchecker := rchecker_no_abstract.
-
+  exact (QTautoChecker_sound __ff __wit
+                             (@eq_refl bool true <: @eq bool (QTautoChecker __ff __wit) true)
+                             (@find Q 0%Q __varmap)).
 (** Here, lra stands for linear rational arithmetic *)
 Ltac lra := lra_Q  rchecker.
 

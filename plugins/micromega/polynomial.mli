@@ -24,6 +24,9 @@ module Monomial : sig
        folds over the variables with multiplicities *)
   val fold : (var -> int -> 'a -> 'a) -> t -> 'a -> 'a
 
+  (** [degree m] is the sum of the degrees of each variable *)
+  val degree : t -> int
+
   (** [const]
       @return the empty monomial i.e. without any variable *)
   val const : t
@@ -33,6 +36,11 @@ module Monomial : sig
   (** [var x]
       @return the monomial x^1 *)
   val var : var -> t
+
+  (** [prod n m]
+      @return the monomial n*m *)
+  val prod : t -> t -> t
+
 
   (** [sqrt m]
       @return [Some r] iff r^2 = m *)
@@ -64,6 +72,7 @@ module MonMap : sig
 
   val union : (Monomial.t -> 'a -> 'a -> 'a option) -> 'a t -> 'a t -> 'a t
 end
+
 
 module Poly : sig
   (** Representation of polonomial with rational coefficient.
@@ -143,6 +152,9 @@ module LinPoly : sig
   module MonT : sig
     (** [clear ()] clears the mapping. *)
     val clear : unit -> unit
+
+    (** [reserve i] reserves the integer i *)
+    val reserve : int -> unit
 
     (** [retrieve x]
         @return the monomial corresponding to the variable [x] *)
@@ -228,6 +240,15 @@ module LinPoly : sig
       for every s^2 that is a monomial of [p] *)
   val collect_square : t -> Monomial.t MonMap.t
 
+  val get_bound : t -> Vect.Bound.t option
+
+  (** [monomials p]
+      @return the set of monomials. *)
+  val monomials : t -> ISet.t
+
+  (** [degree p]
+      @return return the maximum degree *)
+  val degree : t -> int
 
   (** [pp_var o v] pretty-prints a monomial indexed by v. *)
   val pp_var : out_channel -> var -> unit
@@ -265,6 +286,7 @@ module ProofFormat : sig
     | Done
     | Step of int * prf_rule * proof
     | Enum of int * prf_rule * Vect.t * prf_rule * proof list
+    | ExProof of int * int * int * var * var * var * proof  (* x = z - t, z >= 0, t >= 0 *)
 
   val pr_size : prf_rule -> Num.num
 
@@ -368,5 +390,10 @@ sig
 
 
   val is_substitution : bool -> t -> var option
+
+  val is_bound : t -> bool
+
+  val mul_bound : t -> t -> t option
+
 
 end

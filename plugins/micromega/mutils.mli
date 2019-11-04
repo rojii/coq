@@ -37,7 +37,7 @@ end
 
 module Tag : sig
 
-  type t
+  type t = int
 
   val pp : out_channel -> t -> unit
   val next : t -> t
@@ -126,6 +126,8 @@ val iterate_until_stable : ('a -> 'a option) -> 'a -> 'a
 val simplify : ('a -> 'a option) -> 'a list -> 'a list option
 
 val saturate : ('a -> 'b option) -> ('b * 'a -> 'a -> 'a option) -> 'a list -> 'a list
+
+val saturate_bin : ('a -> 'a -> 'a option) -> 'a list -> 'a list
 
 val generate : ('a -> 'b option) -> 'a list -> 'b list
 

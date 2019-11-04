@@ -158,6 +158,29 @@ let saturate p f sys =
      end
 
 
+let saturate_bin (f: 'a -> 'a -> 'a option) (l: 'a list) =
+
+  let rec map_with acc e l =
+    match l with
+    | [] -> acc
+    | e'::l' ->
+       match f e e' with
+       | None -> map_with acc e l'
+       | Some r -> map_with (r::acc) e l' in
+
+  let rec map2_with acc l' =
+      match l' with
+      | [] -> acc
+      | e'::l' -> map2_with (map_with acc e' l) l' in
+
+  let rec iterate acc l' =
+    match map2_with [] l' with
+      | [] -> List.rev_append l' acc
+      | res -> iterate  (List.rev_append l' acc) res in
+
+  iterate [] l
+
+
 open Num
 open Big_int
 
@@ -347,7 +370,7 @@ end
 module type Tag =
 sig
 
-  type t
+  type t = int
 
   val from : int -> t
   val next : t -> t
@@ -375,7 +398,13 @@ end
   * MODULE: Ordered sets of tags.
   *)
 
-module TagSet = Set.Make(Tag)
+module TagSet =
+  struct
+    include Set.Make(Tag)
+
+
+
+  end
 
 (** As for Unix.close_process, our Unix.waipid will ignore all EINTR *)
 
